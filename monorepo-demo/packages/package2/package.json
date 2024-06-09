@@ -1,0 +1,29 @@
+{
+  "name": "package2",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.mjs",
+  "module": "index.cjs",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.mjs",
+      "require": "./index.cjs",
+      "types": "./index.d.ts"
+    },
+    "./global": {
+      "import": "./global.mjs",
+      "require": "./global.cjs",
+      "types": "./global.d.ts"
+    }
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "package1": "workspace:^"
+  }
+}

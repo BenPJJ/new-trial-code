@@ -18,6 +18,7 @@ export const ACTION_TYPE = {
 
   // ========= 用户申请正向链路 start =========
   APPLY: "apply", // 用户申请
+  PROXYAPPLY: "proxyApply", // 代理用户申请
   AGREED: "agreed", // 讲师同意用户申请
   CONNECT: "connect", // 连接中
   // ========= 用户申请正向链路 end =========
@@ -33,13 +34,13 @@ export const ACTION_TYPE = {
   // ========= 讲师回退事件链路 end =========
 
   // ========= 用户回退事件链路 start =========
-  CANCELAUTHORIZATION: "cancelAuthorization", // 用户取消授权
+  REJECTAUTHORIZATION: "rejectAuthorization", // 用户拒绝授权
   CANCELAPPLY: "cancelApply", // 用户取消申请
   REJECTINVITE: "rejectInvite", // 拒绝讲师邀请
   INVITETIMEOUT: "inviteTimeout", // 讲师邀请超时
   APPLYINGTIMEOUT: "applyingTimeout", // 用户申请连麦中超时
   WAITINGTIMEOUT: "waitingTimeout", // 等待接通中超时
-  QUITROOM: "quitRoom", // 用户退房
+  ENDCONNECT: "endConnect", // 用户退房
   RECOVERCONNECT: "recoverConnect", // 恢复连接中（重新进入）
   SWITCHFRONTSTAGE: "switchFrontStage", // 后台切前台
   // ========= 用户回退事件链路 end =========
@@ -72,6 +73,11 @@ const FSM = StateMachine.factory({
     // ========= 用户申请正向链路 start =========
     {
       name: ACTION_TYPE.APPLY,
+      from: CONNECT_STATE.UNLINKED,
+      to: CONNECT_STATE.APPLYING,
+    },
+    {
+      name: ACTION_TYPE.PROXYAPPLY,
       from: CONNECT_STATE.UNLINKED,
       to: CONNECT_STATE.APPLYING,
     },
@@ -118,11 +124,21 @@ const FSM = StateMachine.factory({
       ],
       to: CONNECT_STATE.UNLINKED,
     },
+    {
+      name: ACTION_TYPE.ENDALIVE,
+      from: [
+        CONNECT_STATE.APPLYING,
+        CONNECT_STATE.INVITING,
+        CONNECT_STATE.WAITING,
+        CONNECT_STATE.LINKING,
+      ],
+      to: CONNECT_STATE.UNLINKED,
+    },
     // ========= 讲师回退事件链路 end =========
 
     // ========= 用户回退事件链路 start =========
     {
-      name: ACTION_TYPE.CANCELAUTHORIZATION,
+      name: ACTION_TYPE.REJECTAUTHORIZATION,
       from: "*",
       to: CONNECT_STATE.UNLINKED,
     },
@@ -152,8 +168,8 @@ const FSM = StateMachine.factory({
       to: CONNECT_STATE.UNLINKED,
     },
     {
-      name: ACTION_TYPE.QUITROOM,
-      from: CONNECT_STATE.LINKING,
+      name: ACTION_TYPE.ENDCONNECT,
+      from: [CONNECT_STATE.WAITING, CONNECT_STATE.LINKING],
       to: CONNECT_STATE.UNLINKED,
     },
     {
@@ -166,26 +182,11 @@ const FSM = StateMachine.factory({
       from: [CONNECT_STATE.WAITING, CONNECT_STATE.LINKING],
       to: CONNECT_STATE.UNLINKED,
     },
-    {
-      name: ACTION_TYPE.ENDALIVE,
-      from: [
-        CONNECT_STATE.APPLYING,
-        CONNECT_STATE.INVITING,
-        CONNECT_STATE.WAITING,
-        CONNECT_STATE.LINKING,
-      ],
-      to: CONNECT_STATE.UNLINKED,
-    },
     // ========= 用户回退事件链路 end =========
 
     {
       name: ACTION_TYPE.FORBIDS,
-      from: [
-        CONNECT_STATE.APPLYING,
-        CONNECT_STATE.INVITING,
-        CONNECT_STATE.WAITING,
-        CONNECT_STATE.LINKING,
-      ],
+      from: "*",
       to: CONNECT_STATE.UNLINKED,
     },
 
@@ -211,7 +212,7 @@ const FSM = StateMachine.factory({
     // 系统生命周期，自定义before之前
     onBeforeTransition: function (lifecycle) {
       return new Promise((resolve, reject) => {
-        console.log(
+        console.warn(
           `BeforeTransition lifecycle is %c${lifecycle.transition}%c State changes from %c${lifecycle.from}%c to %c${lifecycle.to}`,
           "color: green",
           "",
@@ -226,7 +227,7 @@ const FSM = StateMachine.factory({
     onTransition: function () {},
     // 系统生命周期，系统onTransition之后，自定义after之前
     onAfterTransition: function (lifecycle) {
-      console.log(
+      console.warn(
         `AfterTransition lifecycle is %c${lifecycle.transition}%c State changes from %c${lifecycle.from}%c to %c${lifecycle.to}`,
         "color: green",
         "",
@@ -248,7 +249,11 @@ const FSM = StateMachine.factory({
       this.effect?.inviteAfterEffect();
     },
     // 自定义生命周期，用户接受讲师的邀请连麦
-    onBeforeAgreedInvite: function () {},
+    onBeforeAgreedInvite: function () {
+      return new Promise((resolve, reject) => {
+        this.effect?.agreedInviteBeforeEffect(resolve, reject);
+      });
+    },
     onAgreedInvite: function () {
       this.effect?.agreedInviteAfterEffect();
     },
@@ -262,6 +267,13 @@ const FSM = StateMachine.factory({
       });
     },
     onApply: function () {},
+    // 自定义生命周期，代理用户申请连麦
+    onBeforeProxyApply: function () {
+      return new Promise((resolve, reject) => {
+        this.effect?.proxyApplyBeforeEffect(resolve, reject);
+      });
+    },
+    onProxyApply: function () {},
     // 自定义生命周期，讲师同意用户申请连麦
     onBeforeAgreed: function () {
       return new Promise((resolve, reject) => {
@@ -321,13 +333,13 @@ const FSM = StateMachine.factory({
     // ========= 讲师回退事件链路 end =========
 
     // ========= 用户回退事件链路 start =========
-    // 自定义生命周期，用户取消授权
-    onBeforeCancelAuthorization: function () {
+    // 自定义生命周期，用户拒绝授权
+    onBeforeRejectAuthorization: function () {
       return new Promise((resolve, reject) => {
-        this.effect?.cancelAuthorizationBeforeEffect(resolve, reject);
+        this.effect?.rejectAuthorizationBeforeEffect(resolve, reject);
       });
     },
-    onAfterCancelAuthorization: function () {},
+    onAfterRejectAuthorization: function () {},
     // 自定义生命周期，取消申请连麦
     onBeforeCancelApply: function () {
       return new Promise((resolve, reject) => {
@@ -358,13 +370,13 @@ const FSM = StateMachine.factory({
       this.effect?.waitingTimeoutAfterEffect();
     },
     // 自定义生命周期，用户连麦下台
-    onBeforeQuitRoom: function () {
+    onBeforeEndConnect: function () {
       return new Promise((resolve, reject) => {
-        this.effect?.quitRoomBeforeEffect(resolve, reject);
+        this.effect?.endConnectBeforeEffect(resolve, reject);
       });
     },
-    onQuitRoom: function () {
-      this.effect?.quitRoomAfterEffect();
+    onEndConnect: function () {
+      this.effect?.endConnectAfterEffect();
     },
     // 自定义生命周期，恢复连麦中
     onBeforeRecoverConnect: function () {},
@@ -413,7 +425,7 @@ const FSM = StateMachine.factory({
 
     // ========= 状态机异常 start =========
     onPendingTransition: function (transition, from, to) {
-      console.log(
+      console.warn(
         `onPendingTransition lifecycle is %c${transition}%c State changes from %c${from}%c to %c${to}`,
         "color: green",
         "",
@@ -435,7 +447,7 @@ const FSM = StateMachine.factory({
       throw error;
     },
     onInvalidTransition: function (transition, from, to) {
-      console.log(
+      console.warn(
         `onInvalidTransition lifecycle is %c${transition}%c State changes from %c${from}%c to %c${to}`,
         "color: green",
         "",

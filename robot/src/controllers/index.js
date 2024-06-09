@@ -1,5 +1,5 @@
-const miniVoice = require("./mini.voice");
+const voice = require("./voice");
 
 module.exports = {
-  miniVoice,
+  voice,
 };

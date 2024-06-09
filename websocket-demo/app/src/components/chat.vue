@@ -1,5 +1,6 @@
 <template>
   <div class="chat">
+    <div>在线人数：{{ onlineCount }}</div>
     <div class="send">
       <input
         v-model="inputVal"
@@ -11,51 +12,60 @@
     </div>
     <div class="discuss">
       <ul>
-        <li v-for="item in list" :key="item">{{ item.msg }}</li>
+        <li v-for="item in list" :key="item">{{ item }}</li>
       </ul>
     </div>
   </div>
 </template>
 
 <script>
+import Socket from "../libs/socket";
+
 export default {
   data() {
     return {
       inputVal: "",
       list: [],
+      isAlreadyInit: false,
+      onlineCount: 0,
     };
   },
   mounted() {
     this.initWs();
   },
+  destroyed() {
+    this.ws.close();
+    this.ws = null;
+  },
   methods: {
     send() {
-      const msgToJson = JSON.stringify({ msg: this.inputVal });
-      this.ws.send(msgToJson);
+      this.ws.sendMsg({ type: "msg", data: this.inputVal });
       this.inputVal = "";
     },
     initWs() {
-      const ws = new WebSocket("ws://localhost:1234");
-      this.ws = ws;
-      ws.open = () => {
-        console.log("连接成功");
-      };
+      if (this.isAlreadyInit) return;
+      this.ws = new Socket({
+        url: "ws://localhost:1234",
+        isHeart: true,
+        isReconnection: false,
+        received: (data) => {
+          const msg = JSON.parse(data);
+          console.error(msg);
 
-      ws.onerror = (err) => {
-        console.log("连接失败：", err);
-      };
+          if (msg?.data?.type === "msg") {
+            console.error("msg", msg.data.data);
+            this.list.push(msg.data.data);
+          }
 
-      ws.onclose = (res) => {
-        console.log("连接关闭：", res);
-      };
+          if (msg?.data?.type === "system_msg") {
+            this.onlineCount = msg.data.onlineCount;
+          }
+        },
+      });
 
-      ws.onmessage = (event) => {
-        console.log("通信：", event);
+      this.ws.connect();
 
-        const info = JSON.parse(event?.data);
-
-        this.list.push(info);
-      };
+      this.isAlreadyInit = true;
     },
   },
 };
