@@ -6,11 +6,6 @@ const {
   QUERY_CLIENT_USER_USED_COUNT,
   QUERY_CLIENT_SHOP_USED_COUNT,
 } = require("../config/query");
-const dayjs = require("dayjs");
-
-const yesterday = dayjs().subtract(1, "day");
-const from = yesterday.hour(0).minute(0).second(0).millisecond(0).valueOf();
-const to = yesterday.hour(23).minute(59).second(59).millisecond(59).valueOf();
 
 async function commonQuery(req) {
   const { AnalysisRecords } = await searchLog({
@@ -23,11 +18,10 @@ async function commonQuery(req) {
 }
 
 // 小程序连麦监控
-async function getMiniVoiceMonitor() {
+async function getMiniVoiceMonitor(req) {
   const AnalysisRecords = await commonQuery({
     Query: QUERY_MINI_MONITOR,
-    From: from,
-    To: to,
+    ...req,
   });
 
   let result = {};
@@ -46,11 +40,10 @@ async function getMiniVoiceMonitor() {
 }
 
 // 连麦监控
-async function getClientVoiceMonitor() {
+async function getClientVoiceMonitor(req) {
   const AnalysisRecords = await commonQuery({
     Query: QUERY_CLIENT_MONITOR,
-    From: from,
-    To: to,
+    ...req,
   });
 
   let result = {};
@@ -69,11 +62,10 @@ async function getClientVoiceMonitor() {
 }
 
 // 店铺使用数
-async function getClientShopUsedCount() {
+async function getClientShopUsedCount(req) {
   const AnalysisRecords = await commonQuery({
     Query: QUERY_CLIENT_SHOP_USED_COUNT,
-    From: from,
-    To: to,
+    ...req,
   });
 
   let result = JSON.parse(AnalysisRecords[0]);
@@ -82,11 +74,10 @@ async function getClientShopUsedCount() {
 }
 
 // 用户使用数
-async function getClientUserUsedCount() {
+async function getClientUserUsedCount(req) {
   const AnalysisRecords = await commonQuery({
     Query: QUERY_CLIENT_USER_USED_COUNT,
-    From: from,
-    To: to,
+    ...req,
   });
 
   let result = JSON.parse(AnalysisRecords[0]);

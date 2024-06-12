@@ -10,11 +10,17 @@ const {
   getClientUserUsedCount,
 } = apis.voice;
 
-const date = dayjs().subtract(1, "day").format("YYYY-MM-DD");
-
 async function sendMsg() {
+  const date = dayjs().subtract(1, "day").format("YYYY-MM-DD");
+
+  const yesterday = dayjs().subtract(1, "day");
+  const from = yesterday.hour(0).minute(0).second(0).millisecond(0).valueOf();
+  const to = yesterday.hour(23).minute(59).second(59).millisecond(59).valueOf();
+
   // 小程序
-  const miniRes = await Promise.all([getMiniVoiceMonitor()]);
+  const miniRes = await Promise.all([
+    getMiniVoiceMonitor({ From: from, To: to }),
+  ]);
   const miniVoiceMonitor = miniRes[0];
 
   let miniSuccessRate = (
@@ -26,9 +32,9 @@ async function sendMsg() {
 
   // 客户端：
   const clientRes = await Promise.all([
-    getClientVoiceMonitor(),
-    getClientShopUsedCount(),
-    getClientUserUsedCount(),
+    getClientVoiceMonitor({ From: from, To: to }),
+    getClientShopUsedCount({ From: from, To: to }),
+    getClientUserUsedCount({ From: from, To: to }),
   ]);
 
   const clientVoiceMonitor = clientRes[0];
@@ -62,10 +68,6 @@ async function sendMsg() {
   });
 }
 
-const today = dayjs().format("YYYY-MM-DD HH:mm:ss");
-
-console.log(date, today);
-
 sendMsg();
 
 /**
@@ -76,4 +78,5 @@ sendMsg();
     0 0 7 1 * * 每月的1日早上7点0分0秒执行一次
     0 0 7 * * 1 每周1的早上7点0分0秒执行一次
  */
-schedule.scheduleJob("0 0 9 * * *", sendMsg);
+schedule.scheduleJob("0 9 * * *", sendMsg);
+schedule.scheduleJob("0 17 * * *", sendMsg);
