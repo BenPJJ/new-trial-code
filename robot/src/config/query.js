@@ -10,11 +10,11 @@ const QUERY_CLIENT_MONITOR =
 
 // 鹅直播客户端连麦使用店铺数
 const QUERY_CLIENT_SHOP_USED_COUNT =
-  'params.api_name:"receive_agree_apply" OR params.api_name:"agree_invite" AND "voiceMonitor" | select approx_distinct("app_id") as cnt limit 10000';
+  '(params.api_name:"receive_agree_apply" OR params.api_name:"agree_invite" OR params.api_name:"linking_connect") AND "voiceMonitor" | select approx_distinct("app_id") as cnt limit 10000';
 
 // 鹅直播客户端连麦用户数
 const QUERY_CLIENT_USER_USED_COUNT =
-  'params.api_name:"receive_agree_apply" OR params.api_name:"agree_invite" AND "voiceMonitor" | select approx_distinct("user_id") as cnt limit 10000';
+  '(params.api_name:"receive_agree_apply" OR params.api_name:"agree_invite" OR params.api_name:"linking_connect") AND "voiceMonitor" | select approx_distinct("user_id") as cnt limit 10000';
 
 module.exports = {
   AQS_TOPIC_ID,

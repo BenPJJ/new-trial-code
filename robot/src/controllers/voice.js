@@ -46,7 +46,10 @@ async function getClientVoiceMonitor(req) {
     ...req,
   });
 
-  let result = {};
+  let result = {
+    succussTotal: 0,
+    failTotal: 0,
+  };
 
   AnalysisRecords.forEach((item) => {
     item = JSON.parse(item);
