@@ -3,6 +3,7 @@ const {
   AQS_TOPIC_ID,
   QUERY_MINI_MONITOR,
   QUERY_CLIENT_MONITOR,
+  QUERY_CLIENT_ALIVE_ID_LIST,
   QUERY_CLIENT_USER_USED_COUNT,
   QUERY_CLIENT_SHOP_USED_COUNT,
 } = require("../config/query");
@@ -24,7 +25,10 @@ async function getMiniVoiceMonitor(req) {
     ...req,
   });
 
-  let result = {};
+  let result = {
+    succussTotal: 0,
+    failTotal: 0,
+  };
 
   AnalysisRecords.forEach((item) => {
     item = JSON.parse(item);
@@ -64,6 +68,18 @@ async function getClientVoiceMonitor(req) {
   return result;
 }
 
+// 使用直播间
+async function getClientAliveIdList(req) {
+  const AnalysisRecords = await commonQuery({
+    Query: QUERY_CLIENT_ALIVE_ID_LIST,
+    ...req,
+  });
+
+  let result = AnalysisRecords.map((item) => JSON.parse(item)).splice(0, 10);
+
+  return result;
+}
+
 // 店铺使用数
 async function getClientShopUsedCount(req) {
   const AnalysisRecords = await commonQuery({
@@ -91,6 +107,7 @@ async function getClientUserUsedCount(req) {
 module.exports = {
   getMiniVoiceMonitor,
   getClientVoiceMonitor,
+  getClientAliveIdList,
   getClientShopUsedCount,
   getClientUserUsedCount,
 };

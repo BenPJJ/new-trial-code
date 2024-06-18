@@ -8,6 +8,10 @@ const QUERY_MINI_MONITOR =
 const QUERY_CLIENT_MONITOR =
   '"voiceMonitor" | select params.api_code as code,count(*) as cnt group by params.api_code limit 10000';
 
+// 鹅直播客户端连麦直播间
+const QUERY_CLIENT_ALIVE_ID_LIST =
+  '"voiceMonitor" AND params.api_name:"linking_connect" | select distinct("alive_id") limit 10000';
+
 // 鹅直播客户端连麦使用店铺数
 const QUERY_CLIENT_SHOP_USED_COUNT =
   '(params.api_name:"receive_agree_apply" OR params.api_name:"agree_invite" OR params.api_name:"linking_connect") AND "voiceMonitor" | select approx_distinct("app_id") as cnt limit 10000';
@@ -20,6 +24,7 @@ module.exports = {
   AQS_TOPIC_ID,
   QUERY_MINI_MONITOR,
   QUERY_CLIENT_MONITOR,
+  QUERY_CLIENT_ALIVE_ID_LIST,
   QUERY_CLIENT_SHOP_USED_COUNT,
   QUERY_CLIENT_USER_USED_COUNT,
 };
